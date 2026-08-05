@@ -85,6 +85,9 @@ void llspi_init(void) {
   REGISTER_INTERRUPT(DMA2_Stream2_IRQn, DMA2_Stream2_IRQ_Handler, SPI_IRQ_RATE, FAULT_INTERRUPT_RATE_SPI_DMA)
   REGISTER_INTERRUPT(DMA2_Stream3_IRQn, DMA2_Stream3_IRQ_Handler, SPI_IRQ_RATE, FAULT_INTERRUPT_RATE_SPI_DMA)
 
+  NVIC_SetPriority(SPI4_IRQn, 0U);
+  NVIC_SetPriority(DMA2_Stream3_IRQn, 0U);
+
   // Setup MOSI DMA
   register_set(&(DMAMUX1_Channel10->CCR), 83U, 0xFFFFFFFFU);
   register_set(&(DMA2_Stream2->CR), (DMA_SxCR_MINC | DMA_SxCR_TCIE), 0x1E077EFEU);

@@ -7,6 +7,7 @@ static volatile bool interrupts_enabled = false;
 
 void enable_interrupts(void) {
   interrupts_enabled = true;
+  __set_BASEPRI(0U);
   __enable_irq();
 }
 

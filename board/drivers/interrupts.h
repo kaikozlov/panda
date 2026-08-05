@@ -74,6 +74,7 @@ void init_interrupts(bool check_rate_limit){
 
   for(uint16_t i=0U; i<NUM_INTERRUPTS; i++){
     interrupts[i].handler = unused_interrupt_handler;
+    NVIC_SetPriority((IRQn_Type)i, 1U);
   }
 
   // Init interrupt timer for a 1s interval
