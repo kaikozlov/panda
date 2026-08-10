@@ -4,6 +4,7 @@ import hashlib
 from typing import NamedTuple
 
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
+INCLUDE_PATH = BASEDIR
 FW_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fw/")
 
 def compute_version_hash(filepath):

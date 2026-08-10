@@ -15,7 +15,7 @@ import opendbc
 from opendbc.car.structs import CarParams
 
 from .base import BaseHandle
-from .constants import BASEDIR, FW_PATH, McuType, USBPACKET_MAX_SIZE, compute_version_hash  # noqa: F401
+from .constants import BASEDIR, FW_PATH, INCLUDE_PATH, McuType, USBPACKET_MAX_SIZE, compute_version_hash  # noqa: F401
 from .dfu import PandaDFU
 from .spi import PandaSpiHandle, PandaSpiException, PandaProtocolMismatch, STBootloaderSPIHandle  # noqa: F401
 from .usb import PandaUsbHandle
