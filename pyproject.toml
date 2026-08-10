@@ -48,7 +48,7 @@ build-backend = "setuptools.build_meta"
 include = ["panda", "panda.*"]
 
 [tool.setuptools.package-data]
-panda = ["health.h", "comms_definitions.h", "fw/*"]
+panda = ["health.h", "can.h", "comms_definitions.h", "fw/*"]
 "panda.jungle" = ["jungle_health.h"]
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
