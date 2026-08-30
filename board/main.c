@@ -77,13 +77,21 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
       }
       can_silent = false;
       break;
-    default:
+    default: {
+#ifdef ALLOW_DEBUG
+      // Exact-F33 TSS3 dev lateral: inject B6 without splitting the native Toyota bus.
+      // The matching safety config disables software forwarding.
+      const bool tss3_dev_passthrough = (mode_copy == SAFETY_TOYOTA) && ((param & (16U << 8U)) != 0U);
+      set_intercept_relay(!tss3_dev_passthrough, false);
+#else
       set_intercept_relay(true, false);
+#endif
       heartbeat_counter = 0U;
       heartbeat_lost = false;
       current_board->set_can_mode(CAN_MODE_NORMAL);
       can_silent = false;
       break;
+    }
   }
   can_init_all();
 }
