@@ -90,8 +90,12 @@ void comms_can_write(const uint8_t *data, uint32_t len) {
       can_write_buffer.ptr += can_write_buffer.tail_size;
       pos += can_write_buffer.tail_size;
 
-      // send out
+      // send out. returned/rejected are queue-private metadata for forwarded
+      // packets; host-provided wire flags must never enter that namespace.
       (void)memcpy((uint8_t*)&to_push, can_write_buffer.data, can_write_buffer.ptr);
+      to_push.returned = 0U;
+      to_push.rejected = 0U;
+      can_set_checksum(&to_push);
       can_send(&to_push, to_push.bus, false);
 
       // reset overflow buffer
@@ -113,6 +117,9 @@ void comms_can_write(const uint8_t *data, uint32_t len) {
     if ((pos + pckt_len) <= len) {
       CANPacket_t to_push = {0};
       (void)memcpy((uint8_t*)&to_push, &data[pos], pckt_len);
+      to_push.returned = 0U;
+      to_push.rejected = 0U;
+      can_set_checksum(&to_push);
       can_send(&to_push, to_push.bus, false);
       pos += pckt_len;
     } else {

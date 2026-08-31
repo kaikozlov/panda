@@ -102,6 +102,32 @@ class TestPandaComms(unittest.TestCase):
       assert m == test_msg, "message buffer should contain valid test messages"
 
 
+  def test_comms_write_sanitizes_queue_private_flags(self):
+    message = (0x123, b"format", 0)
+    pkt = libpanda_py.make_CANPacket(message[0], message[2], message[1])
+    pkt[0].returned = 1
+    pkt[0].rejected = 1
+    lpp.can_set_checksum(pkt)
+    raw = bytes(libpanda_py.ffi.buffer(pkt, 6 + len(message[1])))
+
+    # Exercise both parsing sites in comms_can_write: complete and split packets.
+    for first_chunk in (len(raw), 4):
+      with self.subTest(first_chunk=first_chunk):
+        lpp.comms_can_reset()
+        lpp.comms_can_write(raw[:first_chunk], first_chunk)
+        if first_chunk < len(raw):
+          lpp.comms_can_write(raw[first_chunk:], len(raw) - first_chunk)
+
+        queued = libpanda_py.ffi.new('CANPacket_t *')
+        self.assertTrue(lpp.can_pop(TX_QUEUES[0], queued))
+        self.assertEqual(unpackage_can_msg(queued), message)
+        self.assertEqual(queued[0].returned, 0)
+        self.assertEqual(queued[0].rejected, 0)
+        checksum = 0
+        for b in bytes(libpanda_py.ffi.buffer(queued, 6 + len(message[1]))):
+          checksum ^= b
+        self.assertEqual(checksum, 0)
+
   def test_can_send_usb(self):
     for bus in range(3):
       with self.subTest(bus=bus):

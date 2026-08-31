@@ -107,17 +107,12 @@ void process_can(uint8_t can_number) {
 
           fifo->header[0] = (to_send.extended << 30) | ((to_send.extended != 0U) ? (to_send.addr) : (to_send.addr << 18));
 
-          // Host-created CAN packets do not carry an unambiguous frame-format bit for
-          // <=8-byte payloads, so canfd_auto remains the host-TX policy. Forwarded
-          // packets are different: RX already told us the exact FDF/BRS bits. Preserve
-          // those bits instead of promoting classic CAN to CAN-FD on a mixed bus.
-          //
-          // Forwarding uses returned/rejected as queue-private format metadata. These
-          // bits never reach the CAN wire and are rebuilt below for the host TX echo.
-          const bool preserve_rx_format = to_send.returned != 0U;
-          bool fd = preserve_rx_format ? (bool)(to_send.fd > 0U) :
-                    (bus_config[can_number].canfd_auto ? bus_config[can_number].canfd_enabled : (bool)(to_send.fd > 0U));
-          const bool brs = preserve_rx_format ? (bool)(to_send.rejected > 0U) : bus_config[can_number].brs_enabled;
+          // Host-created CAN packets retain the upstream canfd_auto policy. Software-
+          // forwarded packets already have authoritative RX FDF/BRS metadata and must
+          // preserve it exactly on mixed classic/FD buses.
+          const bool forwarded = to_send.returned != 0U;
+          bool fd = (forwarded || !bus_config[can_number].canfd_auto) ? (bool)(to_send.fd > 0U) : bus_config[can_number].canfd_enabled;
+          const bool brs = forwarded ? (bool)(to_send.rejected > 0U) : bus_config[can_number].brs_enabled;
           uint32_t canfd_enabled_header = fd ? (1UL << 21) : 0UL;
           uint32_t brs_enabled_header = brs ? (1UL << 20) : 0UL;
           fifo->header[1] = (to_send.data_len_code << 16) | canfd_enabled_header | brs_enabled_header;
