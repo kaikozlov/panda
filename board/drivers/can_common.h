@@ -36,6 +36,11 @@ can_buffer(tx3_q, CAN_TX_BUFFER_SIZE)
 // cppcheck-suppress misra-c2012-9.3
 can_ring *can_queues[PANDA_CAN_CNT] = {&can_tx1_q, &can_tx2_q, &can_tx3_q};
 
+// TX-queue-private metadata, consumed by process_can() and never accepted from host input:
+//   returned == 1: packet originates from software forwarding; preserve the exact received
+//                  frame format, with rejected carrying the original BRS bit.
+//   returned == 0: host/body-created packet; normal canfd_auto/brs_enabled TX policy applies.
+
 // ********************* interrupt safe queue *********************
 bool can_pop(can_ring *q, CANPacket_t *elem) {
   bool ret = false;
