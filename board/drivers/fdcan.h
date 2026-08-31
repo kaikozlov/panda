@@ -107,11 +107,19 @@ void process_can(uint8_t can_number) {
 
           fifo->header[0] = (to_send.extended << 30) | ((to_send.extended != 0U) ? (to_send.addr) : (to_send.addr << 18));
 
-          // If canfd_auto is set, outgoing packets will be automatically sent as CAN-FD if an incoming CAN-FD packet was seen
-          bool fd = bus_config[can_number].canfd_auto ? bus_config[can_number].canfd_enabled : (bool)(to_send.fd > 0U);
+          // Host-created CAN packets do not carry an unambiguous frame-format bit for
+          // <=8-byte payloads, so canfd_auto remains the host-TX policy. Forwarded
+          // packets are different: RX already told us the exact FDF/BRS bits. Preserve
+          // those bits instead of promoting classic CAN to CAN-FD on a mixed bus.
+          //
+          // Forwarding uses returned/rejected as queue-private format metadata. These
+          // bits never reach the CAN wire and are rebuilt below for the host TX echo.
+          const bool preserve_rx_format = to_send.returned != 0U;
+          bool fd = preserve_rx_format ? (bool)(to_send.fd > 0U) :
+                    (bus_config[can_number].canfd_auto ? bus_config[can_number].canfd_enabled : (bool)(to_send.fd > 0U));
+          const bool brs = preserve_rx_format ? (bool)(to_send.rejected > 0U) : bus_config[can_number].brs_enabled;
           uint32_t canfd_enabled_header = fd ? (1UL << 21) : 0UL;
-
-          uint32_t brs_enabled_header = bus_config[can_number].brs_enabled ? (1UL << 20) : 0UL;
+          uint32_t brs_enabled_header = brs ? (1UL << 20) : 0UL;
           fifo->header[1] = (to_send.data_len_code << 16) | canfd_enabled_header | brs_enabled_header;
 
           uint8_t data_len_w = (dlc_to_len[to_send.data_len_code] / 4U);
@@ -202,8 +210,11 @@ void can_rx(uint8_t can_number) {
       CANPacket_t to_send;
 
       to_send.fd = to_push.fd;
-      to_send.returned = 0U;
-      to_send.rejected = 0U;
+      // Queue-private forwarding metadata: returned marks that the exact RX frame
+      // format must be preserved, while rejected carries the original BRS bit.
+      // process_can() replaces both with normal host-visible TX-echo semantics.
+      to_send.returned = 1U;
+      to_send.rejected = brs_frame ? 1U : 0U;
       to_send.extended = to_push.extended;
       to_send.addr = to_push.addr;
       to_send.bus = to_push.bus;
