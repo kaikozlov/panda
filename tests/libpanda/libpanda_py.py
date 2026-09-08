@@ -62,6 +62,8 @@ for name, argtypes, restype in (
   ("can_pop", [ctypes.POINTER(CANRing), ctypes.POINTER(CANPacket)], ctypes.c_bool),
   ("can_push", [ctypes.POINTER(CANRing), ctypes.POINTER(CANPacket)], ctypes.c_bool),
   ("can_set_checksum", [ctypes.POINTER(CANPacket)], None),
+  ("can_set_orientation", [ctypes.c_bool], None),
+  ("get_can_tx_checksum_error_cnt", [ctypes.c_uint8], ctypes.c_uint32),
   ("comms_can_read", [ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32], ctypes.c_int),
   ("comms_can_write", [ctypes.c_char_p, ctypes.c_uint32], None),
   ("comms_can_reset", [], None),
