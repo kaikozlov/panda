@@ -3,7 +3,7 @@ import random
 import unittest
 
 from opendbc.car.structs import CarParams
-from panda import DLC_TO_LEN, USBPACKET_MAX_SIZE, pack_can_buffer, unpack_can_buffer
+from panda import CANPACKET_HEAD_SIZE, DLC_TO_LEN, USBPACKET_MAX_SIZE, pack_can_buffer, unpack_can_buffer
 from panda.tests.libpanda import libpanda_py
 
 lpp = libpanda_py.libpanda
@@ -127,6 +127,61 @@ class TestPandaComms(unittest.TestCase):
         for b in bytes(libpanda_py.ffi.buffer(queued, 6 + len(message[1]))):
           checksum ^= b
         self.assertEqual(checksum, 0)
+
+  def test_comms_write_rejects_bad_checksum_and_recovers(self):
+    try:
+      for flipped in (False, True):
+        lpp.can_set_orientation(flipped)
+        for bus in range(3):
+          can_number = 2 - bus if flipped else bus
+          for data_len in (8, 32):
+            message = (0x123, bytes(range(data_len)), bus)
+            pkt = libpanda_py.make_CANPacket(message[0], message[2], message[1])
+            pkt[0].fd = data_len > 8
+            for private_flags in (False, True):
+              pkt[0].returned = private_flags
+              pkt[0].rejected = private_flags
+              lpp.can_set_checksum(pkt)
+              raw = bytes(libpanda_py.ffi.buffer(pkt, CANPACKET_HEAD_SIZE + data_len))
+              for corrupt_index in (CANPACKET_HEAD_SIZE - 1, len(raw) - 1):
+                bad = bytearray(raw)
+                bad[corrupt_index] ^= 1
+                for first_chunk in (len(raw), 4, CANPACKET_HEAD_SIZE, len(raw) - 1):
+                  with self.subTest(flipped=flipped, bus=bus, data_len=data_len, private_flags=private_flags,
+                                    corrupt_index=corrupt_index, first_chunk=first_chunk):
+                    lpp.comms_can_reset()
+                    before = [lpp.get_can_tx_checksum_error_cnt(i) for i in range(3)]
+                    lpp.comms_can_write(bytes(bad[:first_chunk]), first_chunk)
+                    # A valid packet immediately following bad input must still be handled.
+                    remaining = bytes(bad[first_chunk:]) + raw
+                    lpp.comms_can_write(remaining, len(remaining))
+
+                    queued = libpanda_py.ffi.new('CANPacket_t *')
+                    self.assertTrue(lpp.can_pop(TX_QUEUES[bus], queued))
+                    self.assertEqual(unpackage_can_msg(queued), message)
+                    self.assertEqual(queued[0].fd, data_len > 8)
+                    self.assertEqual(queued[0].returned, 0)
+                    self.assertEqual(queued[0].rejected, 0)
+                    self.assertFalse(lpp.can_pop(TX_QUEUES[bus], queued))
+                    after = [lpp.get_can_tx_checksum_error_cnt(i) for i in range(3)]
+                    self.assertEqual([a - b for a, b in zip(after, before, strict=True)],
+                                     [int(i == can_number) for i in range(3)])
+    finally:
+      lpp.can_set_orientation(False)
+
+  def test_comms_write_bad_checksum_invalid_bus(self):
+    for bus in (3, 7):
+      with self.subTest(bus=bus):
+        lpp.comms_can_reset()
+        pkt = libpanda_py.make_CANPacket(0x123, bus, b"invalid")
+        pkt[0].checksum ^= 1
+        raw = bytes(libpanda_py.ffi.buffer(pkt, CANPACKET_HEAD_SIZE + 7))
+        before = [lpp.get_can_tx_checksum_error_cnt(i) for i in range(3)]
+        lpp.comms_can_write(raw, len(raw))
+        self.assertEqual([lpp.get_can_tx_checksum_error_cnt(i) for i in range(3)], before)
+        queued = libpanda_py.ffi.new('CANPacket_t *')
+        for queue in TX_QUEUES:
+          self.assertFalse(lpp.can_pop(queue, queued))
 
   def test_can_send_usb(self):
     for bus in range(3):
