@@ -157,8 +157,10 @@ bool llcan_init(FDCAN_GlobalTypeDef *FDCANx) {
     FDCANx->CCCR |= FDCAN_CCCR_TXP;
     // Disable protocol exception handling
     FDCANx->CCCR |= FDCAN_CCCR_PXHD;
-    // FD with BRS
-    FDCANx->CCCR |= (FDCAN_CCCR_FDOE | FDCAN_CCCR_BRSE);
+    // FD with BRS. Exact F33 also enables its receive edge filter (REFE),
+    // whose M_CAN equivalent is EFBI: require two consecutive dominant Tq
+    // for hard synchronization while integrating from bus idle.
+    FDCANx->CCCR |= (FDCAN_CCCR_FDOE | FDCAN_CCCR_BRSE | FDCAN_CCCR_EFBI);
 
     // Set TX mode to FIFO
     FDCANx->TXBC &= ~(FDCAN_TXBC_TFQM);
