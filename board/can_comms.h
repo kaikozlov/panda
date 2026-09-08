@@ -77,6 +77,22 @@ int comms_can_read(uint8_t *data, uint32_t max_len) {
 
 static asm_buffer can_write_buffer = {.ptr = 0U, .tail_size = 0U};
 
+static void comms_can_send(CANPacket_t *packet) {
+  // Validate the original host packet before changing queue-private metadata.
+  if (can_check_checksum(packet)) {
+    packet->returned = 0U;
+    packet->rejected = 0U;
+    can_set_checksum(packet);
+    can_send(packet, packet->bus, false);
+  } else if (packet->bus < PANDA_CAN_CNT) {
+    uint8_t can_number = CAN_NUM_FROM_BUS_NUM(packet->bus);
+    if (can_number < PANDA_CAN_CNT) {
+      can_health[can_number].total_tx_checksum_error_cnt += 1U;
+    }
+  } else {
+  }
+}
+
 // send on CAN
 void comms_can_write(const uint8_t *data, uint32_t len) {
   uint32_t pos = 0U;
@@ -90,13 +106,8 @@ void comms_can_write(const uint8_t *data, uint32_t len) {
       can_write_buffer.ptr += can_write_buffer.tail_size;
       pos += can_write_buffer.tail_size;
 
-      // send out. returned/rejected are queue-private metadata for forwarded
-      // packets; host-provided wire flags must never enter that namespace.
       (void)memcpy((uint8_t*)&to_push, can_write_buffer.data, can_write_buffer.ptr);
-      to_push.returned = 0U;
-      to_push.rejected = 0U;
-      can_set_checksum(&to_push);
-      can_send(&to_push, to_push.bus, false);
+      comms_can_send(&to_push);
 
       // reset overflow buffer
       can_write_buffer.ptr = 0U;
@@ -117,10 +128,7 @@ void comms_can_write(const uint8_t *data, uint32_t len) {
     if ((pos + pckt_len) <= len) {
       CANPacket_t to_push = {0};
       (void)memcpy((uint8_t*)&to_push, &data[pos], pckt_len);
-      to_push.returned = 0U;
-      to_push.rejected = 0U;
-      can_set_checksum(&to_push);
-      can_send(&to_push, to_push.bus, false);
+      comms_can_send(&to_push);
       pos += pckt_len;
     } else {
       (void)memcpy(can_write_buffer.data, &data[pos], len - pos);
