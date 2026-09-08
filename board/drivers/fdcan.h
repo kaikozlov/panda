@@ -115,7 +115,7 @@ void process_can(uint8_t can_number) {
           // Explicit FDF must always win. Auto mode is only a compatibility fallback
           // for legacy host senders that do not describe short CAN-FD frames.
           const bool fd = forwarded ? requested_fd :
-                          (requested_fd || (bus_config[can_number].canfd_auto && bus_config[can_number].canfd_enabled));
+                          (requested_fd || (bus_config[bus_number].canfd_auto && bus_config[can_number].canfd_enabled));
           const bool brs = forwarded ? (bool)(to_send.rejected > 0U) : bus_config[can_number].brs_enabled;
           uint32_t canfd_enabled_header = fd ? (1UL << 21) : 0UL;
           uint32_t brs_enabled_header = brs ? (1UL << 20) : 0UL;
