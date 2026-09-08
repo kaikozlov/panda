@@ -6,7 +6,7 @@
 #define CAN_PCLK 80000U // KHz, sourced from PLL1Q
 #define BITRATE_PRESCALER 2U // Valid from 250Kbps to 5Mbps with 80Mhz clock
 #define CAN_SP_NOMINAL 80U // 80% for both SAE J2284-4 and SAE J2284-5
-#define CAN_SP_DATA_2M 80U // 80% for SAE J2284-4
+#define CAN_SP_DATA_2M 70U // exact Toyota TSS3 F33 data-phase sample point; experimental fork override
 #define CAN_SP_DATA_5M 75U // 75% for SAE J2284-5
 #define CAN_QUANTA(speed, prescaler) (CAN_PCLK / ((speed) / 10U * (prescaler)))
 #define CAN_SEG1(tq, sp) (((tq) * (sp) / 100U)- 1U)
