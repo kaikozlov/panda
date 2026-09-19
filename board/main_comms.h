@@ -257,9 +257,15 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     case 0xe7:
       set_power_save_state(req->param1 != 0U);
       break;
-    // **** 0xe8: set can-fd auto swithing mode
+    // **** 0xe8: set can-fd auto switching mode
     case 0xe8:
-      bus_config[req->param1].canfd_auto = req->param2 > 0U;
+      if (req->param1 < PANDA_CAN_CNT) {
+        // USB/API bus numbers are logical. Harness orientation may map logical
+        // bus 0/2 onto the opposite physical FDCAN controller, so update the
+        // controller config actually backing the requested bus.
+        const uint8_t can_num = CAN_NUM_FROM_BUS_NUM(req->param1);
+        bus_config[can_num].canfd_auto = req->param2 > 0U;
+      }
       break;
     // **** 0xf1: Clear CAN ring buffer.
     case 0xf1:
