@@ -112,7 +112,7 @@ void process_can(uint8_t can_number) {
           // preserve it exactly on mixed classic/FD buses.
           const bool forwarded = to_send.returned != 0U;
           bool fd = (forwarded || !bus_config[can_number].canfd_auto) ? (bool)(to_send.fd > 0U) : bus_config[can_number].canfd_enabled;
-          const bool brs = forwarded ? (bool)(to_send.rejected > 0U) : bus_config[can_number].brs_enabled;
+          const bool brs = forwarded ? (bool)(to_send.rejected > 0U) : (bus_config[can_number].canfd_auto && bus_config[can_number].brs_enabled);
           uint32_t canfd_enabled_header = fd ? (1UL << 21) : 0UL;
           uint32_t brs_enabled_header = brs ? (1UL << 20) : 0UL;
           fifo->header[1] = (to_send.data_len_code << 16) | canfd_enabled_header | brs_enabled_header;
