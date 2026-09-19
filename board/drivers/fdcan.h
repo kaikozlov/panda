@@ -235,7 +235,7 @@ void can_rx(uint8_t can_number) {
     if (!(bus_config[can_number].canfd_enabled) && (canfd_frame)) {
       bus_config[can_number].canfd_enabled = true;
     }
-    if (!(bus_config[can_number].brs_enabled) && (brs_frame)) {
+    if (!(bus_config[can_number].brs_enabled) && (brs_frame) && bus_config[can_number].canfd_auto) {
       bus_config[can_number].brs_enabled = true;
     }
 
