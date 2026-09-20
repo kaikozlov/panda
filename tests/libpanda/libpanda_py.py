@@ -43,6 +43,8 @@ extern can_ring *tx3_q;
 bool can_pop(can_ring *q, CANPacket_t *elem);
 bool can_push(can_ring *q, CANPacket_t *elem);
 void can_set_checksum(CANPacket_t *packet);
+void can_set_orientation(bool flipped);
+uint32_t get_can_tx_checksum_error_cnt(uint8_t can_number);
 int comms_can_read(uint8_t *data, uint32_t max_len);
 void comms_can_write(uint8_t *data, uint32_t len);
 void comms_can_reset(void);
@@ -65,6 +67,8 @@ class Panda(Protocol):
   tx2_q: Any
   tx3_q: Any
   def can_set_checksum(self, p: CANPacket) -> None: ...
+  def can_set_orientation(self, flipped: bool) -> None: ...
+  def get_can_tx_checksum_error_cnt(self, can_number: int) -> int: ...
 
   # safety
   def set_safety_hooks(self, mode: int, param: int) -> int: ...
