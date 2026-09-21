@@ -156,8 +156,10 @@ class Panda:
   HARNESS_STATUS_NORMAL = 1
   HARNESS_STATUS_FLIPPED = 2
 
-  def __init__(self, serial: str | None = None, claim: bool = True, disable_checks: bool = True, can_speed_kbps: int = 500, cli: bool = True):
+  def __init__(self, serial: str | None = None, claim: bool = True, disable_checks: bool = True,
+               can_speed_kbps: int = 500, cli: bool = True, configure: bool = True):
     self._disable_checks = disable_checks
+    self._configure = configure
 
     self._handle: BaseHandle
     self._handle_open = False
@@ -228,21 +230,22 @@ class Panda:
     self.health_version, self.can_version = self.get_packets_versions()
     logger.debug("connected")
 
-    # disable openpilot's heartbeat checks
-    if self._disable_checks:
-      self.set_heartbeat_disabled()
-      self.set_power_save(0)
+    if self._configure:
+      # disable openpilot's heartbeat checks
+      if self._disable_checks:
+        self.set_heartbeat_disabled()
+        self.set_power_save(0)
 
-    # reset comms
-    self.can_reset_communications()
+      # reset comms
+      self.can_reset_communications()
 
-    # disable automatic CAN-FD switching
-    for bus in range(PANDA_CAN_CNT):
-      self.set_canfd_auto(bus, False)
+      # disable automatic CAN-FD switching
+      for bus in range(PANDA_CAN_CNT):
+        self.set_canfd_auto(bus, False)
 
-    # set CAN speed
-    for bus in range(PANDA_CAN_CNT):
-      self.set_can_speed_kbps(bus, self._can_speed_kbps)
+      # set CAN speed
+      for bus in range(PANDA_CAN_CNT):
+        self.set_can_speed_kbps(bus, self._can_speed_kbps)
 
   @property
   def spi(self) -> bool:
