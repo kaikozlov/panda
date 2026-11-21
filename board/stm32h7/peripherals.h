@@ -101,6 +101,10 @@ void peripherals_init(void) {
   // Enable CPU access to SRAMs for DMA
   RCC->AHB2ENR |= RCC_AHB2ENR_SRAM1EN | RCC_AHB2ENR_SRAM2EN;
 
+  // Retained TSS3 bringup configuration
+  RCC->AHB4ENR |= RCC_AHB4ENR_BKPRAMEN;
+  PWR->CR2 |= PWR_CR2_BREN;
+
   // Supplemental
   RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;  // DAC DMA
   RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;  // SPI DMA

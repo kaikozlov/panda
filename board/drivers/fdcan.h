@@ -223,6 +223,9 @@ static void can_rx(uint8_t can_number) {
     #endif
 
     ignition_can_hook(&to_push);
+    #ifndef PANDA_BODY
+    tss3_bringup_rx(&to_push);
+    #endif
 
     led_set(LED_BLUE, true);
     rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;

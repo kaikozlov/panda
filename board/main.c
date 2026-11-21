@@ -15,6 +15,7 @@
 #include "board/health.h"
 
 #include "board/drivers/can_common.h"
+#include "board/tss3_bringup.h"
 
 #include "board/drivers/fdcan.h"
 
@@ -362,6 +363,7 @@ int main(void) {
 
   // LED should keep on blinking all the time
   while (true) {
+    tss3_bringup_poll(microsecond_timer_get());
     #ifdef ALLOW_DEBUG
     if (stop_mode_requested) {
       enter_stop_mode();
@@ -377,6 +379,7 @@ int main(void) {
         delay(fade >> 4);
         led_set(LED_RED, false);
         delay((MAX_LED_FADE - fade) >> 4);
+        tss3_bringup_poll(microsecond_timer_get());
       }
 
       for (uint32_t fade = MAX_LED_FADE; fade > 0U; fade -= 1U) {
@@ -384,6 +387,7 @@ int main(void) {
         delay(fade >> 4);
         led_set(LED_RED, false);
         delay((MAX_LED_FADE - fade) >> 4);
+        tss3_bringup_poll(microsecond_timer_get());
       }
     } else {
       if ((hw_type == HW_TYPE_CUATRO) && !current_board->read_som_gpio()) {

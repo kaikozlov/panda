@@ -5,7 +5,6 @@
 extern int app_start[0xc000]; // Only first 3 sectors of size 0x4000 are used
 
 // Prototypes
-void set_safety_mode(uint16_t mode, uint16_t param);
 #ifdef ALLOW_DEBUG
 void self_test_inject(uint8_t test);
 #endif
@@ -411,6 +410,14 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(req->param1));
         UNUSED(ret);
       }
+      break;
+    // **** 0xfa: configure retained TSS3 request-signer bringup
+    case 0xfa:
+      if (req->param1 <= 1U) {
+        tss3_bringup_set_enabled(req->param1 == 1U);
+      }
+      resp[0] = tss3_bringup_enabled();
+      resp_len = 1U;
       break;
     // **** 0xfc: set CAN FD non-ISO mode
     case 0xfc:
